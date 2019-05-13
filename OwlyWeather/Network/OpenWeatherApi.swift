@@ -13,6 +13,13 @@ class OpenWeatherApi {
     private let key = "6beda136c0f88edfc5db7dd0efe3d955"
     private let baseUrl = "https://api.openweathermap.org/data/2.5/"
     
+    private let decoder: JSONDecoder
+    
+    init() {
+        decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+    }
+    
     func fetchCurrentWeatherByCoordinates(lat: Double, lon: Double, closure: @escaping (CurrentWeatherResponse?, Error?) -> Void) {
         
         let urlString = "\(baseUrl)weather?lat=\(lat)&lon=\(lon)&appid=\(key)"
@@ -29,11 +36,8 @@ class OpenWeatherApi {
                 return
             }
             
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            
             do {
-                let currentWeatherResponse = try decoder.decode(CurrentWeatherResponse.self, from: data)
+                let currentWeatherResponse = try self.decoder.decode(CurrentWeatherResponse.self, from: data)
                 closure(currentWeatherResponse, nil)
             } catch let error {
                 print("ERROR: ", error)
@@ -58,11 +62,8 @@ class OpenWeatherApi {
                 return
             }
             
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            
             do {
-                let forecastWeatherResponse = try decoder.decode(ForecastWeatherResponse.self, from: data)
+                let forecastWeatherResponse = try self.decoder.decode(ForecastWeatherResponse.self, from: data)
                 closure(forecastWeatherResponse, nil)
             } catch let error {
                 print("ERROR: ", error)
