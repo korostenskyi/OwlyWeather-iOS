@@ -41,4 +41,33 @@ class OpenWeatherApi {
             }
         }.resume()
     }
+    
+    func fetchForecastWeatherByCoordinates(lat: Double, lon: Double, closure: @escaping (ForecastWeatherResponse?, Error?) -> Void) {
+        
+        let urlString = "\(baseUrl)forecast?lat=\(lat)&lon=\(lon)&appid=\(key)"
+        
+        guard let url = URL(string: urlString) else {
+            print("ERROR: Error while creating forecast url")
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { (data, _, error) in
+            
+            guard let data = data else {
+                print("ERROR: This is no data to decode")
+                return
+            }
+            
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            
+            do {
+                let forecastWeatherResponse = try decoder.decode(ForecastWeatherResponse.self, from: data)
+                closure(forecastWeatherResponse, nil)
+            } catch let error {
+                print("ERROR: ", error)
+                closure(nil, error)
+            }
+        }.resume()
+    }
 }
