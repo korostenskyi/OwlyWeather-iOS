@@ -8,6 +8,11 @@
 
 import Foundation
 
+enum OpenWeatherError: Error {
+    case noDataAvailable
+    case canNotProcessData
+}
+
 class OpenWeatherApi {
     
     private let key = "6beda136c0f88edfc5db7dd0efe3d955"
@@ -20,55 +25,57 @@ class OpenWeatherApi {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
     }
     
-    func fetchCurrentWeatherByCoordinates(lat: Double, lon: Double, closure: @escaping (CurrentWeatherResponse?, Error?) -> Void) {
+    func fetchCurrentWeatherByCoordinates(lat: Double, lon: Double, completion: @escaping(Result<CurrentWeatherResponse, OpenWeatherError>) -> Void) {
         
         let urlString = "\(baseUrl)weather?lat=\(lat)&lon=\(lon)&appid=\(key)"
         
         guard let url = URL(string: urlString) else {
             print("ERROR: Error while creating an URL")
-            return
+            fatalError()
         }
         
-        URLSession.shared.dataTask(with: url) { (data, _, error) in
+        let dataTask = URLSession.shared.dataTask(with: url) { (data, _, _) in
             
-            guard let data = data else {
-                print("ERROR: There is no data to decode")
+            guard let jsonData = data else {
+                completion(.failure(.noDataAvailable))
                 return
             }
             
             do {
-                let currentWeatherResponse = try self.decoder.decode(CurrentWeatherResponse.self, from: data)
-                closure(currentWeatherResponse, nil)
-            } catch let error {
-                print("ERROR: ", error)
-                closure(nil, error)
+                let currentWeatherResponse = try self.decoder.decode(CurrentWeatherResponse.self, from: jsonData)
+                completion(.success(currentWeatherResponse))
+            } catch {
+                completion(.failure(.canNotProcessData))
             }
-        }.resume()
+        }
+        
+        dataTask.resume()
     }
     
-    func fetchForecastWeatherByCoordinates(lat: Double, lon: Double, closure: @escaping (ForecastWeatherResponse?, Error?) -> Void) {
+    func fetchForecastWeatherByCoordinates(lat: Double, lon: Double, completion: @escaping(Result<ForecastWeatherResponse, OpenWeatherError>) -> Void) {
         
         let urlString = "\(baseUrl)forecast?lat=\(lat)&lon=\(lon)&appid=\(key)"
         
         guard let url = URL(string: urlString) else {
             print("ERROR: Error while creating forecast url")
-            return
+            fatalError()
         }
         
-        URLSession.shared.dataTask(with: url) { (data, _, error) in
+        let dataTask = URLSession.shared.dataTask(with: url) { (data, _, _) in
             
-            guard let data = data else {
-                print("ERROR: This is no data to decode")
+            guard let jsonData = data else {
+                completion(.failure(.noDataAvailable))
                 return
             }
             
             do {
-                let forecastWeatherResponse = try self.decoder.decode(ForecastWeatherResponse.self, from: data)
-                closure(forecastWeatherResponse, nil)
-            } catch let error {
-                print("ERROR: ", error)
-                closure(nil, error)
+                let forecastWeatherResponse = try self.decoder.decode(ForecastWeatherResponse.self, from: jsonData)
+                completion(.success(forecastWeatherResponse))
+            } catch {
+                completion(.failure(.canNotProcessData))
             }
-        }.resume()
+        }
+        
+        dataTask.resume()
     }
 }
